@@ -1,0 +1,49 @@
+module ram
+  (
+    clk_ram_in,
+    write_enable_ram_in,
+    data_ram_in,
+    write_address_ram_in,
+    read_enable_ram_in,
+    read_address_ram_in,
+
+    data_ram_out
+  );
+
+  input clk_ram_in;
+  input write_enable_ram_in;
+  input [7:0] data_ram_in;
+  input [3:0] write_address_ram_in;
+  input read_enable_ram_in;
+  input [3:0] read_address_ram_in;
+  
+  output[7:0] data_ram_out;
+
+  output reg [7:0] data_ram_out;
+  reg [7:0] mem [15:0];
+ 
+  always@(posedge clk_ram_in)
+    begin
+      if(write_enable_ram_in)
+        begin
+          mem[write_address_ram_in] <= data_ram_in;
+        end
+      else
+        begin
+          mem[write_address_ram_in] <= data_ram_in;
+        end
+    end
+
+  always@(posedge clk_ram_in)
+    begin
+      if(read_enable_ram_in)
+        begin
+          data_ram_out <= mem[read_address_ram_in];
+        end
+      else
+        begin
+          data_ram_out <= data_ram_out;
+        end
+    end
+        
+endmodule

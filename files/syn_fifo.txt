@@ -1,0 +1,136 @@
+`include"ram.txt"
+
+module syn_fifo_bram
+  (
+    fifo_rst,
+    fifo_clk,
+    fifo_write_en,
+    fifo_read_en,
+    fifo_write_data_in,
+	 
+    fifo_read_data_out,
+	fifo_full,
+	fifo_empty
+  );
+
+  input fifo_rst;
+  input fifo_clk;
+  input fifo_write_en;
+  input fifo_read_en;
+  input [7:0] fifo_write_data_in;
+  
+  output [7:0] fifo_read_data_out;
+  output fifo_full;
+  output fifo_empty;
+  
+  reg buff;
+
+	always@(posedge fifo_clk)
+		buff<=fifo_read_en;
+
+  reg fifo_full;
+  reg fifo_empty;
+  reg [4:0] fifo_data_count;
+  reg [3:0] fifo_write_address;
+  reg [3:0] fifo_read_address;
+
+
+  always@(posedge fifo_clk or posedge fifo_rst)
+    begin
+      if(fifo_rst)
+        begin
+          fifo_data_count <= 0;
+        end
+      else if((fifo_write_en==1'd1) && (fifo_read_en==1'd0) && (fifo_full==1'd0))
+        begin
+          fifo_data_count <= fifo_data_count + 5'd1;
+        end
+      else if((fifo_write_en==1'd1) && (fifo_read_en==1'd1) && (fifo_empty==1'd1))
+        begin
+          fifo_data_count <= fifo_data_count + 5'd1;
+        end
+      else if((fifo_write_en==1'd0) && (fifo_read_en==1'd1) && (fifo_empty==1'd0))
+        begin
+          fifo_data_count <= fifo_data_count - 5'd1;
+        end
+      else
+        begin
+          fifo_data_count <= fifo_data_count;
+        end
+    end
+
+  always @(*)
+    begin
+      if(fifo_data_count >= 5'd16)
+        begin
+          fifo_full <= 1;
+        end
+      else
+        begin
+          fifo_full <= 0;
+        end
+    end
+
+  always @(*)
+    begin
+      if(fifo_data_count == 0)
+        begin
+          fifo_empty <= 1;
+        end
+      else
+        begin
+          fifo_empty <= 0;
+        end
+    end
+    
+  always@(posedge fifo_clk or posedge fifo_rst)
+    begin
+      if(fifo_rst)
+        begin
+          fifo_write_address <= 0;
+        end
+      else if(fifo_write_en==1'd1)
+        begin
+          fifo_write_address <= fifo_write_address + 4'd1;
+        end
+      else
+        begin
+          fifo_write_address <= fifo_write_address;
+        end
+    end
+
+  always@(posedge fifo_clk or posedge fifo_rst)
+    begin
+      if(fifo_rst)
+        begin
+          fifo_read_address <= 0;
+        end
+      else if(fifo_read_en==1'd1 && fifo_empty==1'd0)
+        begin
+          fifo_read_address <= fifo_read_address + 4'd1;
+        end
+      else if(fifo_write_en==1'd1 && fifo_full==1'd1)
+        begin
+          fifo_read_address <= fifo_read_address + 4'd1;
+        end
+      else
+        begin
+          fifo_read_address <= fifo_read_address;
+        end
+    end
+	 
+	
+	ram ram_inst
+    (
+      .clk_ram_in(fifo_clk),
+      .write_enable_ram_in(fifo_write_en),
+      .data_ram_in(fifo_write_data_in),
+      .write_address_ram_in(fifo_write_address),
+      .read_enable_ram_in(fifo_read_en&~fifo_empty),
+      .read_address_ram_in(fifo_read_address),
+
+      .data_ram_out(fifo_read_data_out)
+    );
+
+
+endmodule
